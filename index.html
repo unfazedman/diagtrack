@@ -1111,16 +1111,7 @@ function toast(msg, type='') {
 document.getElementById('caseModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeCaseModal(); });
 document.getElementById('detailModal').addEventListener('click', e => { if(e.target===e.currentTarget) document.getElementById('detailModal').classList.remove('open'); });
 
-// ── SEED DEMO DATA (first time only) ─────────────────
-if(!cases.length) {
-  cases = [
-    {id:'DC-2026-001',agent:'ABC Pharmacy',sourceType:'Agent',entryDate:'2026-04-01',completionDate:'2026-04-03',paidDate:'2026-04-05',bill:5000,labCost:3200,commType:'blood_local',commPercent:10,commFixed:0,testName:'',commission:500,profit:1300,labStatus:'Completed',commStatus:'Paid',notes:'CBC + LFT panel',prescFiles:[],recFiles:[],createdAt:'2026-04-01T10:00:00Z',updatedAt:'2026-04-05T10:00:00Z'},
-    {id:'DC-2026-002',agent:'XYZ Patient',sourceType:'Direct',entryDate:'2026-04-05',completionDate:'',paidDate:'',bill:2800,labCost:1800,commType:'fixed',commPercent:0,commFixed:200,testName:'Vitamin D Test',commission:200,profit:800,labStatus:'In Progress',commStatus:'Pending',notes:'Vitamin D deficiency check',prescFiles:[],recFiles:[],createdAt:'2026-04-05T10:00:00Z',updatedAt:'2026-04-05T10:00:00Z'},
-    {id:'DC-2026-003',agent:'MedPlus Store',sourceType:'Agent',entryDate:'2026-04-10',completionDate:'2026-04-12',paidDate:'',bill:7500,labCost:4500,commType:'blood_outside',commPercent:15,commFixed:0,testName:'',commission:1125,profit:1875,labStatus:'Completed',commStatus:'In Progress',notes:'Full body checkup sent to outside lab',prescFiles:[],recFiles:[],createdAt:'2026-04-10T10:00:00Z',updatedAt:'2026-04-12T10:00:00Z'},
-    {id:'DC-2026-004',agent:'ABC Pharmacy',sourceType:'Agent',entryDate:'2026-04-15',completionDate:'',paidDate:'',bill:3200,labCost:2000,commType:'fixed',commPercent:0,commFixed:300,testName:'Thyroid Profile',commission:300,profit:900,labStatus:'Pending',commStatus:'Pending',notes:'T3 T4 TSH',prescFiles:[],recFiles:[],createdAt:'2026-04-15T10:00:00Z',updatedAt:'2026-04-15T10:00:00Z'}
-  ];
-  save();
-}
+// No demo data — starts clean
 updateNotif();
 </script>
 </body>
