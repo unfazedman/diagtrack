@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DiagTrack — Commission Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f8f9fb;
+  --border: #e2e6ed;
+  --text: #1a1d23;
+  --text2: #5a6272;
+  --text3: #9aa3b2;
+  --accent: #2563eb;
+  --accent-light: #eff4ff;
+  --accent-dark: #1d4ed8;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --orange: #ea580c;
+  --orange-light: #fff7ed;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --yellow: #ca8a04;
+  --yellow-light: #fefce8;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,.12);
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --nav-h: 60px;
+  --bottom-h: 68px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+
+/* ── TOP BAR ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h); background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+.topbar-logo { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -.3px; flex: 1; }
+.topbar-logo span { color: var(--text2); font-weight: 400; }
+.topbar-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 8px; color: var(--text2); font-size: 20px; display: flex; align-items: center; }
+.topbar-btn:hover { background: var(--bg); }
+.notif-badge { position: relative; }
+.notif-badge::after { content: attr(data-count); position: absolute; top: 4px; right: 4px; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; border-radius: 10px; padding: 1px 4px; min-width: 14px; text-align: center; line-height: 12px; display: none; }
+.notif-badge[data-count]:not([data-count="0"])::after { display: block; }
+
+/* ── MAIN CONTENT ── */
+.main { padding-top: var(--nav-h); padding-bottom: var(--bottom-h); min-height: 100vh; }
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: var(--bottom-h); background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: stretch;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border: none; background: none; color: var(--text3); font-family: var(--font); font-size: 10px; font-weight: 500; padding: 8px 4px; transition: color .15s; }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item.active { color: var(--accent); }
+.nav-item.active svg { stroke: var(--accent); }
+
+/* ── CARDS ── */
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.card-title { font-size: 14px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── STAT GRID ── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px; box-shadow: var(--shadow); }
+.stat-card.full { grid-column: 1/-1; }
+.stat-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+.stat-value { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.stat-accent { color: var(--accent); }
+.stat-green { color: var(--green); }
+.stat-orange { color: var(--orange); }
+.stat-red { color: var(--red); }
+.stat-purple { color: var(--purple); }
+
+/* ── BADGES ── */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+.badge-pending { background: var(--yellow-light); color: var(--yellow); }
+.badge-inprogress { background: var(--accent-light); color: var(--accent); }
+.badge-completed { background: var(--green-light); color: var(--green); }
+.badge-cancelled { background: var(--red-light); color: var(--red); }
+.badge-paid { background: var(--green-light); color: var(--green); }
+.badge-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+
+/* ── FORMS ── */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .3px; }
+.form-label .req { color: var(--red); }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border);
+  font-family: var(--font); font-size: 15px; color: var(--text); background: var(--surface);
+  transition: border-color .15s, box-shadow .15s; outline: none; -webkit-appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+.btn-danger { background: var(--red-light); color: var(--red); }
+.btn-success { background: var(--green-light); color: var(--green); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 7px 12px; font-size: 12px; }
+
+/* ── CASE LIST ── */
+.case-item { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.case-item:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); }
+.case-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.case-id { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+.case-date { font-size: 11px; color: var(--text3); }
+.case-agent { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.case-meta { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+.case-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.case-stat { background: var(--surface2); border-radius: 8px; padding: 8px; text-align: center; }
+.case-stat-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.case-stat-value { font-size: 14px; font-weight: 700; color: var(--text); }
+.case-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ── SEARCH ── */
+.search-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+.search-input { flex: 1; padding: 10px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-family: var(--font); font-size: 14px; outline: none; background: var(--surface); }
+.search-input:focus { border-color: var(--accent); }
+.filter-scroll { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.filter-scroll::-webkit-scrollbar { display: none; }
+.filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--text2); white-space: nowrap; transition: all .15s; }
+.filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: none; align-items: flex-end; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-height: 92vh; overflow-y: auto; padding: 20px 16px 32px; -webkit-overflow-scrolling: touch; }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.modal-close { position: absolute; top: 16px; right: 16px; background: var(--bg); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text2); }
+
+/* ── FILE UPLOAD ── */
+.file-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 20px; text-align: center; cursor: pointer; transition: all .15s; }
+.file-zone:hover, .file-zone.drag { border-color: var(--accent); background: var(--accent-light); }
+.file-zone input { display: none; }
+.file-zone-icon { font-size: 32px; margin-bottom: 8px; }
+.file-zone-text { font-size: 13px; color: var(--text2); }
+.file-zone-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.file-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.file-item { display: flex; align-items: center; gap: 10px; background: var(--surface2); border-radius: 8px; padding: 8px 12px; border: 1px solid var(--border); }
+.file-item-icon { font-size: 18px; }
+.file-item-name { flex: 1; font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item-remove { background: none; border: none; cursor: pointer; color: var(--red); font-size: 16px; padding: 2px; }
+
+/* ── DETAIL VIEW ── */
+.detail-header { background: var(--accent); color: #fff; border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.detail-id { font-family: var(--mono); font-size: 13px; opacity: .8; margin-bottom: 4px; }
+.detail-agent { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.detail-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.detail-badges .badge { background: rgba(255,255,255,.2); color: #fff; }
+.detail-section { margin-bottom: 12px; }
+.detail-section-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.detail-field { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+.detail-field-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
+.detail-field-value { font-size: 14px; font-weight: 600; }
+.detail-field.full { grid-column: 1/-1; }
+.commission-box { background: var(--accent-light); border: 1.5px solid var(--accent); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px; }
+.commission-box-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(37,99,235,.15); }
+.commission-box-row:last-child { border-bottom: none; padding-bottom: 0; }
+.commission-box-row.total { font-weight: 700; font-size: 16px; }
+.commission-label { color: var(--text2); font-size: 13px; }
+.commission-value { font-weight: 600; color: var(--accent); font-family: var(--mono); }
+
+/* ── PENDING SECTION ── */
+.pending-item { background: var(--surface); border-radius: var(--radius-sm); border-left: 3px solid var(--orange); padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow); }
+.pending-agent { font-weight: 600; font-size: 14px; }
+.pending-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.pending-amount { font-size: 18px; font-weight: 700; color: var(--orange); margin-top: 6px; }
+.overdue-item { border-left-color: var(--red); }
+.overdue-item .pending-amount { color: var(--red); }
+
+/* ── MONTH PICKER ── */
+.month-picker { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-radius: var(--radius-sm); border: 1.5px solid var(--border); padding: 10px 14px; margin-bottom: 14px; }
+.month-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text2); padding: 4px; }
+.month-label { font-size: 15px; font-weight: 600; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 6px; }
+.progress-bar { height: 100%; border-radius: 4px; background: var(--accent); transition: width .3s; }
+.progress-bar.green { background: var(--green); }
+.progress-bar.orange { background: var(--orange); }
+
+/* ── WHATSAPP SHARE ── */
+.wa-btn { background: #25D366; color: #fff; border: none; border-radius: var(--radius-sm); padding: 10px 16px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 48px 24px; color: var(--text3); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.empty-text { font-size: 13px; }
+
+/* ── SECTION HEADER ── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-size: 17px; font-weight: 700; }
+
+/* ── TOAST ── */
+.toast { position: fixed; top: 70px; left: 16px; right: 16px; z-index: 300; background: var(--text); color: #fff; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 14px; font-weight: 500; text-align: center; transform: translateY(-20px); opacity: 0; transition: all .3s; pointer-events: none; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* ── COMMISSION TYPE SELECTOR ── */
+.comm-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.comm-type-btn { border: 1.5px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); padding: 10px 6px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text2); transition: all .15s; }
+.comm-type-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── RESPONSIVE ── */
+@media (min-width: 480px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.page.active > * { animation: fadeIn .2s ease forwards; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-logo">DiagTrack <span>Pro</span></div>
+  <button class="topbar-btn" onclick="goPage('backup')" title="Backup & Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  </button>
+  <button class="topbar-btn notif-badge" id="notifBtn" data-count="0" onclick="showPending()" title="Pending commissions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+  </button>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="section-header">
+      <div class="section-title">Dashboard</div>
+      <div id="dashDate" style="font-size:12px;color:var(--text3);"></div>
+    </div>
+
+    <div class="stat-grid" id="dashStats"></div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recent Cases</div><button class="btn btn-sm btn-secondary" onclick="goPage('cases')">View All</button></div>
+      <div id="recentCases"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚠️ Pending Commissions</div></div>
+      <div id="dashPending"></div>
+    </div>
+  </div>
+
+  <!-- CASES LIST -->
+  <div class="page" id="page-cases">
+    <div class="section-header">
+      <div class="section-title">All Cases</div>
+      <button class="btn btn-primary btn-sm" onclick="openNewCase()">+ New</button>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" id="searchInput" placeholder="Search by ID, agent, patient…" oninput="renderCases()" />
+    </div>
+    <div class="filter-scroll" id="filterChips"></div>
+    <div id="casesList"></div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="page" id="page-reports">
+    <div class="section-title" style="margin-bottom:14px;">Monthly Report</div>
+    <div class="month-picker">
+      <button class="month-btn" onclick="changeMonth(-1)">◀</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button class="month-btn" onclick="changeMonth(1)">▶</button>
+    </div>
+    <div class="stat-grid" id="reportStats"></div>
+    <div class="card" id="reportChart"></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Agent Breakdown</div></div>
+      <div id="agentBreakdown"></div>
+    </div>
+  </div>
+
+  <!-- PENDING COMMISSIONS -->
+  <div class="page" id="page-pending">
+    <div class="section-title" style="margin-bottom:14px;">Pending Commissions</div>
+    <div id="pendingList"></div>
+  </div>
+
+  <!-- BACKUP PAGE -->
+  <div class="page" id="page-backup">
+    <div class="section-title" style="margin-bottom:6px;">Backup & Restore</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px;">Keep your data safe. Export regularly and store in Google Drive or WhatsApp Saved Messages.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Export Backup</div></div>
+      <div id="backupInfo" style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2);"></div>
+      <button class="btn btn-primary btn-full" onclick="exportData()" style="margin-bottom:10px;">Download Backup File (.json)</button>
+      <button class="wa-btn btn-full" onclick="exportToWhatsApp()" style="justify-content:center;">Share Backup Summary via WhatsApp</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;text-align:center;">Save in Google Drive for extra safety</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Restore from Backup</div></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Select a previously exported <strong>.json</strong> backup file to restore your data.</div>
+      <div class="file-zone" onclick="document.getElementById('importFile').click()">
+        <input type="file" id="importFile" accept=".json" onchange="importData(this)" style="display:none;">
+        <div class="file-zone-icon">📂</div>
+        <div class="file-zone-text">Tap to select backup file</div>
+        <div class="file-zone-hint">.json backup file only</div>
+      </div>
+      <div style="background:var(--red-light);border:1px solid var(--red);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--red);">Warning: Restoring will replace ALL current data. Export first!</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Backup Tips</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text2);">
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:18px;">☁️</span><div><strong>Google Drive</strong> — Save exported file to Drive for cloud access from any device</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:18px;">💬</span><div><strong>WhatsApp Saved Messages</strong> — Send to yourself as a quick backup</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:18px;">📅</span><div><strong>Weekly backup</strong> — Export every Sunday to keep data safe</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:18px;">🔄</span><div><strong>Before switching phone</strong> — Always export before changing devices</div></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--red);">
+      <div class="card-header"><div class="card-title" style="color:var(--red);">Danger Zone</div></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Clear ALL data. Cannot be undone. Export first!</div>
+      <button class="btn btn-danger btn-full" onclick="clearAllData()">Clear All Data</button>
+    </div>
+  </div>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="goPage('dashboard')" id="nav-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Home
+  </button>
+  <button class="nav-item" onclick="goPage('cases')" id="nav-cases">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+    Cases
+  </button>
+  <button class="nav-item" onclick="openNewCase()" id="nav-add" style="position:relative;">
+    <div style="background:var(--accent);border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;position:absolute;top:-14px;box-shadow:0 4px 12px rgba(37,99,235,.4);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="22" height="22"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span style="margin-top:20px;">Add</span>
+  </button>
+  <button class="nav-item" onclick="goPage('reports')" id="nav-reports">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Reports
+  </button>
+  <button class="nav-item" onclick="goPage('pending')" id="nav-pending">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Pending
+  </button>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ADD/EDIT CASE MODAL -->
+<div class="modal-overlay" id="caseModal">
+  <div class="modal" id="caseModalContent">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="caseModalTitle">New Case</div>
+
+    <div class="form-group">
+      <div class="form-label">Agent / Patient Name <span class="req">*</span></div>
+      <input class="form-input" id="f_agent" placeholder="e.g. ABC Pharmacy / XYZ Patient" />
+      <div class="form-hint">Enter pharmacy/agent name or direct patient name</div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Source Type <span class="req">*</span></div>
+      <select class="form-select" id="f_sourceType">
+        <option value="Agent">Agent (Pharmacy/Referral)</option>
+        <option value="Direct">Direct Patient</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Entry Date</div>
+        <input class="form-input" id="f_entryDate" type="date" />
+      </div>
+      <div class="form-group">
+        <div class="form-label">Lab Completion Date</div>
+        <input class="form-input" id="f_completionDate" type="date" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Total Bill (₹) <span class="req">*</span></div>
+        <input class="form-input" id="f_bill" type="number" placeholder="5000" oninput="calcCommission()" />
+      </div>
+      <div class="form-group">
+        <div class="form-label">Lab Cost (₹) <span class="req">*</span></div>
+        <input class="form-input" id="f_labCost" type="number" placeholder="3000" oninput="calcCommission()" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Commission Type <span class="req">*</span></div>
+      <div class="comm-type-grid">
+        <div class="comm-type-btn active" id="ct_blood_local" onclick="setCommType('blood_local')">🔬 Blood<br><small>Local Lab</small></div>
+        <div class="comm-type-btn" id="ct_blood_outside" onclick="setCommType('blood_outside')">🧪 Blood<br><small>Outside Lab</small></div>
+        <div class="comm-type-btn" id="ct_fixed" onclick="setCommType('fixed')">📌 Fixed<br><small>Specific Test</small></div>
+      </div>
+    </div>
+
+    <div id="commissionFields">
+      <div id="cf_percent" class="form-group">
+        <div class="form-label">Commission % <span class="req">*</span></div>
+        <input class="form-input" id="f_commPercent" type="number" placeholder="10" oninput="calcCommission()" />
+      </div>
+      <div id="cf_fixed" class="form-group" style="display:none;">
+        <div class="form-label">Fixed Commission Amount (₹) <span class="req">*</span></div>
+        <input class="form-input" id="f_commFixed" type="number" placeholder="200" oninput="calcCommission()" />
+        <div class="form-hint">e.g. Vitamin D ₹200, Thyroid Profile ₹300</div>
+      </div>
+      <div id="cf_testName" class="form-group" style="display:none;">
+        <div class="form-label">Test Name</div>
+        <input class="form-input" id="f_testName" placeholder="e.g. Vitamin D Test" />
+      </div>
+    </div>
+
+    <div class="commission-box" id="commPreview" style="display:none;">
+      <div class="commission-box-row"><span class="commission-label">Bill Amount</span><span class="commission-value" id="prev_bill">—</span></div>
+      <div class="commission-box-row"><span class="commission-label">Lab Cost</span><span class="commission-value" id="prev_lab">—</span></div>
+      <div class="commission-box-row"><span class="commission-label">Commission</span><span class="commission-value" id="prev_comm">—</span></div>
+      <div class="commission-box-row total"><span class="commission-label">Net Profit</span><span class="commission-value" id="prev_profit">—</span></div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Lab Status</div>
+        <select class="form-select" id="f_labStatus">
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Commission Status</div>
+        <select class="form-select" id="f_commStatus">
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Commission Paid Date</div>
+      <input class="form-input" id="f_paidDate" type="date" />
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Notes / Test Details</div>
+      <textarea class="form-textarea" id="f_notes" placeholder="Any additional notes, test names, special instructions…"></textarea>
+    </div>
+
+    <hr class="divider">
+    <div class="form-label" style="margin-bottom:10px;">📋 Prescription Upload</div>
+    <div class="file-zone" id="prescZone" onclick="document.getElementById('prescFile').click()" ondragover="onDrag(event,'prescZone')" ondragleave="offDrag('prescZone')" ondrop="onDrop(event,'prescFiles')">
+      <input type="file" id="prescFile" multiple accept="image/*,.pdf" onchange="addFiles('prescFiles',this)">
+      <div class="file-zone-icon">📋</div>
+      <div class="file-zone-text">Tap to upload prescription</div>
+      <div class="file-zone-hint">Photo or PDF • Doctor's prescription</div>
+    </div>
+    <div class="file-list" id="prescFiles"></div>
+
+    <div style="height:14px;"></div>
+    <div class="form-label" style="margin-bottom:10px;">🧾 Receipt / Payment Proof Upload</div>
+    <div class="file-zone" id="recZone" onclick="document.getElementById('recFile').click()" ondragover="onDrag(event,'recZone')" ondragleave="offDrag('recZone')" ondrop="onDrop(event,'recFiles')">
+      <input type="file" id="recFile" multiple accept="image/*,.pdf" onchange="addFiles('recFiles',this)">
+      <div class="file-zone-icon">🧾</div>
+      <div class="file-zone-text">Tap to upload receipt</div>
+      <div class="file-zone-hint">Lab receipt • Payment proof • Billing receipt</div>
+    </div>
+    <div class="file-list" id="recFiles"></div>
+
+    <div style="height:20px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeCaseModal()">Cancel</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="saveCase()">💾 Save Case</button>
+    </div>
+  </div>
+</div>
+
+<!-- CASE DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="detailContent"></div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let cases = JSON.parse(localStorage.getItem('diagtrack_cases') || '[]');
+let currentEditId = null;
+let currentCommType = 'blood_local';
+let currentPage = 'dashboard';
+let reportMonth = new Date();
+let pendingFiles = { prescFiles: [], recFiles: [] };
+
+function save() { localStorage.setItem('diagtrack_cases', JSON.stringify(cases)); }
+
+// ── INIT ──────────────────────────────────────────────
+window.onload = () => {
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('f_entryDate').value = today();
+  reportMonth = new Date();
+  renderDashboard();
+  renderCases();
+  renderFilters();
+  updateNotif();
+};
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmt(n) { return '₹' + Number(n||0).toLocaleString('en-IN'); }
+function fmtDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+
+// ── NAVIGATION ──────────────────────────────────────────
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.getElementById('nav-' + p)?.classList.add('active');
+  currentPage = p;
+  if(p==='dashboard') renderDashboard();
+  if(p==='reports') renderReports();
+  if(p==='pending') renderPending();
+  if(p==='cases') renderCases();
+  if(p==='backup') renderBackupInfo();
+}
+function showPending() { goPage('pending'); }
+
+// ── CASE ID GENERATOR ──────────────────────────────────
+function genId() {
+  const yr = new Date().getFullYear();
+  const existing = cases.filter(c => c.id.startsWith('DC-'+yr));
+  const num = String(existing.length + 1).padStart(3,'0');
+  return `DC-${yr}-${num}`;
+}
+
+// ── COMMISSION CALC ────────────────────────────────────
+function setCommType(t) {
+  currentCommType = t;
+  document.querySelectorAll('.comm-type-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('ct_' + t).classList.add('active');
+  if(t === 'fixed') {
+    document.getElementById('cf_percent').style.display = 'none';
+    document.getElementById('cf_fixed').style.display = 'block';
+    document.getElementById('cf_testName').style.display = 'block';
+  } else {
+    document.getElementById('cf_percent').style.display = 'block';
+    document.getElementById('cf_fixed').style.display = 'none';
+    document.getElementById('cf_testName').style.display = 'none';
+    document.getElementById('f_commPercent').placeholder = t === 'blood_local' ? '10' : '15';
+  }
+  calcCommission();
+}
+
+function calcCommission() {
+  const bill = parseFloat(document.getElementById('f_bill').value) || 0;
+  const lab = parseFloat(document.getElementById('f_labCost').value) || 0;
+  let comm = 0;
+  if(currentCommType === 'fixed') {
+    comm = parseFloat(document.getElementById('f_commFixed').value) || 0;
+  } else {
+    const pct = parseFloat(document.getElementById('f_commPercent').value) || 0;
+    comm = bill * pct / 100;
+  }
+  const profit = bill - lab - comm;
+  const preview = document.getElementById('commPreview');
+  if(bill || lab || comm) {
+    preview.style.display = 'block';
+    document.getElementById('prev_bill').textContent = fmt(bill);
+    document.getElementById('prev_lab').textContent = fmt(lab);
+    document.getElementById('prev_comm').textContent = fmt(comm);
+    document.getElementById('prev_profit').textContent = fmt(profit);
+    document.getElementById('prev_profit').style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  } else { preview.style.display = 'none'; }
+}
+
+// ── FILE HANDLING ──────────────────────────────────────
+function addFiles(target, input) {
+  const files = Array.from(input.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingFiles[target].push({ name: f.name, type: f.type, data: e.target.result });
+      renderFileList(target);
+    };
+    reader.readAsDataURL(f);
+  });
+  input.value = '';
+}
+function renderFileList(target) {
+  const el = document.getElementById(target);
+  el.innerHTML = pendingFiles[target].map((f,i) => `
+    <div class="file-item">
+      <span class="file-item-icon">${f.type.includes('pdf') ? '📄' : '🖼️'}</span>
+      <span class="file-item-name">${f.name}</span>
+      <button class="file-item-remove" onclick="removeFile('${target}',${i})">✕</button>
+    </div>`).join('');
+}
+function removeFile(target, i) { pendingFiles[target].splice(i, 1); renderFileList(target); }
+function onDrag(e, zone) { e.preventDefault(); document.getElementById(zone).classList.add('drag'); }
+function offDrag(zone) { document.getElementById(zone).classList.remove('drag'); }
+function onDrop(e, target) { e.preventDefault(); offDrag(); const dt = e.dataTransfer; if(dt.files.length) { addFiles(target, {files: dt.files}); } }
+
+// ── OPEN / CLOSE MODAL ────────────────────────────────
+function openNewCase() {
+  currentEditId = null;
+  pendingFiles = { prescFiles: [], recFiles: [] };
+  document.getElementById('caseModalTitle').textContent = 'New Diagnostic Case';
+  clearForm();
+  document.getElementById('f_entryDate').value = today();
+  document.getElementById('caseModal').classList.add('open');
+}
+function openEditCase(id) {
+  const c = cases.find(x => x.id === id);
+  if(!c) return;
+  currentEditId = id;
+  pendingFiles = { prescFiles: c.prescFiles || [], recFiles: c.recFiles || [] };
+  document.getElementById('caseModalTitle').textContent = 'Edit Case — ' + id;
+  document.getElementById('f_agent').value = c.agent;
+  document.getElementById('f_sourceType').value = c.sourceType;
+  document.getElementById('f_entryDate').value = c.entryDate || '';
+  document.getElementById('f_completionDate').value = c.completionDate || '';
+  document.getElementById('f_bill').value = c.bill;
+  document.getElementById('f_labCost').value = c.labCost;
+  document.getElementById('f_labStatus').value = c.labStatus;
+  document.getElementById('f_commStatus').value = c.commStatus;
+  document.getElementById('f_paidDate').value = c.paidDate || '';
+  document.getElementById('f_notes').value = c.notes || '';
+  setCommType(c.commType || 'blood_local');
+  if(c.commType === 'fixed') {
+    document.getElementById('f_commFixed').value = c.commFixed || '';
+    document.getElementById('f_testName').value = c.testName || '';
+  } else {
+    document.getElementById('f_commPercent').value = c.commPercent || '';
+  }
+  renderFileList('prescFiles'); renderFileList('recFiles');
+  calcCommission();
+  document.getElementById('caseModal').classList.add('open');
+}
+function closeCaseModal() { document.getElementById('caseModal').classList.remove('open'); }
+function clearForm() {
+  ['f_agent','f_entryDate','f_completionDate','f_bill','f_labCost','f_commPercent','f_commFixed','f_testName','f_paidDate','f_notes'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('f_sourceType').value = 'Agent';
+  document.getElementById('f_labStatus').value = 'Pending';
+  document.getElementById('f_commStatus').value = 'Pending';
+  document.getElementById('commPreview').style.display = 'none';
+  document.getElementById('prescFiles').innerHTML = '';
+  document.getElementById('recFiles').innerHTML = '';
+  setCommType('blood_local');
+}
+
+// ── SAVE CASE ─────────────────────────────────────────
+function saveCase() {
+  const agent = document.getElementById('f_agent').value.trim();
+  const bill = parseFloat(document.getElementById('f_bill').value);
+  const labCost = parseFloat(document.getElementById('f_labCost').value);
+  if(!agent) { toast('Enter agent/patient name','error'); return; }
+  if(!bill) { toast('Enter bill amount','error'); return; }
+  if(!labCost && labCost !== 0) { toast('Enter lab cost','error'); return; }
+
+  let comm = 0, commPercent = 0, commFixed = 0;
+  if(currentCommType === 'fixed') {
+    commFixed = parseFloat(document.getElementById('f_commFixed').value) || 0;
+    comm = commFixed;
+  } else {
+    commPercent = parseFloat(document.getElementById('f_commPercent').value) || 0;
+    comm = bill * commPercent / 100;
+  }
+
+  const obj = {
+    id: currentEditId || genId(),
+    agent, sourceType: document.getElementById('f_sourceType').value,
+    entryDate: document.getElementById('f_entryDate').value,
+    completionDate: document.getElementById('f_completionDate').value,
+    paidDate: document.getElementById('f_paidDate').value,
+    bill, labCost, commType: currentCommType, commPercent, commFixed,
+    testName: document.getElementById('f_testName').value,
+    commission: comm, profit: bill - labCost - comm,
+    labStatus: document.getElementById('f_labStatus').value,
+    commStatus: document.getElementById('f_commStatus').value,
+    notes: document.getElementById('f_notes').value,
+    prescFiles: [...pendingFiles.prescFiles],
+    recFiles: [...pendingFiles.recFiles],
+    updatedAt: new Date().toISOString()
+  };
+
+  if(currentEditId) {
+    const idx = cases.findIndex(c => c.id === currentEditId);
+    cases[idx] = obj;
+    toast('Case updated ✓','success');
+  } else {
+    obj.createdAt = new Date().toISOString();
+    cases.unshift(obj);
+    toast('Case saved ✓','success');
+  }
+  save(); closeCaseModal(); renderDashboard(); renderCases(); updateNotif();
+}
+
+// ── RENDER DASHBOARD ──────────────────────────────────
+function renderDashboard() {
+  const total = cases.length;
+  const completed = cases.filter(c => c.labStatus === 'Completed').length;
+  const totalRevenue = cases.reduce((s,c) => s + (c.bill||0), 0);
+  const totalCommPaid = cases.filter(c => c.commStatus === 'Paid').reduce((s,c) => s + (c.commission||0), 0);
+  const totalCommPending = cases.filter(c => c.commStatus !== 'Paid').reduce((s,c) => s + (c.commission||0), 0);
+  const totalProfit = cases.reduce((s,c) => s + (c.profit||0), 0);
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Cases</div><div class="stat-value stat-accent">${total}</div><div class="stat-sub">${completed} completed</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value stat-green">${fmt(totalRevenue)}</div><div class="stat-sub">Total billed</div></div>
+    <div class="stat-card"><div class="stat-label">Comm. Paid</div><div class="stat-value stat-purple">${fmt(totalCommPaid)}</div><div class="stat-sub">Settled</div></div>
+    <div class="stat-card"><div class="stat-label">Comm. Due</div><div class="stat-value stat-orange">${fmt(totalCommPending)}</div><div class="stat-sub">Pending</div></div>
+    <div class="stat-card full"><div class="stat-label">Net Profit</div><div class="stat-value ${totalProfit>=0?'stat-green':'stat-red'}">${fmt(totalProfit)}</div><div class="stat-sub">Bill − Lab Cost − Commission</div></div>
+  `;
+
+  const recent = cases.slice(0,5);
+  document.getElementById('recentCases').innerHTML = recent.length ? recent.map(c => miniCard(c)).join('') : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No cases yet</div><div class="empty-text">Tap + to add your first case</div></div>';
+
+  const pending = cases.filter(c => c.commStatus !== 'Paid').slice(0,4);
+  document.getElementById('dashPending').innerHTML = pending.length ? pending.map(c => `
+    <div class="pending-item" onclick="openDetailModal('${c.id}')">
+      <div class="pending-agent">${c.agent}</div>
+      <div class="pending-meta">${c.id} · ${fmtDate(c.entryDate)}</div>
+      <div class="pending-amount">${fmt(c.commission)} due</div>
+    </div>`).join('') : '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">✅ No pending commissions!</div>';
+}
+
+function miniCard(c) {
+  return `<div class="case-item" onclick="openDetailModal('${c.id}')">
+    <div class="case-top"><div><div class="case-id">${c.id}</div><div class="case-agent">${c.agent}</div></div><div style="text-align:right;">${labBadge(c.labStatus)}</div></div>
+    <div class="case-stats">
+      <div class="case-stat"><div class="case-stat-label">Bill</div><div class="case-stat-value">${fmt(c.bill)}</div></div>
+      <div class="case-stat"><div class="case-stat-label">Comm.</div><div class="case-stat-value">${fmt(c.commission)}</div></div>
+      <div class="case-stat"><div class="case-stat-label">Profit</div><div class="case-stat-value" style="color:${c.profit>=0?'var(--green)':'var(--red)'}">${fmt(c.profit)}</div></div>
+    </div>
+  </div>`;
+}
+
+// ── RENDER CASES LIST ─────────────────────────────────
+let filterStatus = 'All';
+function renderFilters() {
+  const statuses = ['All','Pending','In Progress','Completed','Cancelled'];
+  document.getElementById('filterChips').innerHTML = statuses.map(s =>
+    `<div class="filter-chip ${s===filterStatus?'active':''}" onclick="setFilter('${s}')">${s}</div>`
+  ).join('');
+}
+function setFilter(s) { filterStatus = s; renderFilters(); renderCases(); }
+
+function renderCases() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  let filtered = cases.filter(c => {
+    const matchQ = !q || c.id.toLowerCase().includes(q) || c.agent.toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q);
+    const matchS = filterStatus === 'All' || c.labStatus === filterStatus;
+    return matchQ && matchS;
+  });
+  const el = document.getElementById('casesList');
+  if(!el) return;
+  el.innerHTML = filtered.length ? filtered.map(c => fullCard(c)).join('') : '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No cases found</div><div class="empty-text">Try a different search or filter</div></div>';
+}
+
+function fullCard(c) {
+  return `<div class="case-item" onclick="openDetailModal('${c.id}')">
+    <div class="case-top">
+      <div>
+        <div class="case-id">${c.id}</div>
+        <div class="case-agent">${c.agent}</div>
+        <div class="case-meta">${c.sourceType} · ${fmtDate(c.entryDate)}</div>
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;gap:4px;">${labBadge(c.labStatus)}${commBadge(c.commStatus)}</div>
+    </div>
+    <div class="case-stats">
+      <div class="case-stat"><div class="case-stat-label">Bill</div><div class="case-stat-value">${fmt(c.bill)}</div></div>
+      <div class="case-stat"><div class="case-stat-label">Commission</div><div class="case-stat-value">${fmt(c.commission)}</div></div>
+      <div class="case-stat"><div class="case-stat-label">Profit</div><div class="case-stat-value" style="color:${c.profit>=0?'var(--green)':'var(--red)'}">${fmt(c.profit)}</div></div>
+    </div>
+  </div>`;
+}
+
+function labBadge(s) {
+  const map = {Pending:'badge-pending','In Progress':'badge-inprogress',Completed:'badge-completed',Cancelled:'badge-cancelled'};
+  return `<span class="badge badge-dot ${map[s]||'badge-pending'}">${s}</span>`;
+}
+function commBadge(s) {
+  const map = {Pending:'badge-pending','In Progress':'badge-inprogress',Paid:'badge-paid'};
+  return `<span class="badge badge-dot ${map[s]||'badge-pending'}">Comm: ${s}</span>`;
+}
+
+// ── DETAIL MODAL ──────────────────────────────────────
+function openDetailModal(id) {
+  const c = cases.find(x => x.id === id);
+  if(!c) return;
+
+  const commTypeLabel = {blood_local:'Blood (Local Lab)',blood_outside:'Blood (Outside Lab)',fixed:'Fixed Test'}[c.commType] || c.commType;
+  const commDetail = c.commType === 'fixed' ? `Fixed ₹${c.commFixed}` : `${c.commPercent}%`;
+
+  const files = (arr, label) => arr && arr.length ? `<div style="display:flex;flex-direction:column;gap:6px;">${arr.map(f=>`<div class="file-item"><span class="file-item-icon">${f.type?.includes('pdf')?'📄':'🖼️'}</span><span class="file-item-name">${f.name}</span><a href="${f.data}" download="${f.name}" style="color:var(--accent);font-size:12px;font-weight:600;text-decoration:none;padding:4px;">↓</a><button class="wa-btn" onclick="waShare('${id}','${f.name}','${label}')" style="padding:4px 8px;font-size:11px;">📲</button></div>`).join('')}</div>` : '<div style="font-size:12px;color:var(--text3);">No files uploaded</div>';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="modal-handle"></div>
+    <div class="detail-header">
+      <div class="detail-id">${c.id}</div>
+      <div class="detail-agent">${c.agent}</div>
+      <div class="detail-badges">${labBadge(c.labStatus)}${commBadge(c.commStatus)}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Case Info</div>
+      <div class="detail-grid">
+        <div class="detail-field"><div class="detail-field-label">Source</div><div class="detail-field-value">${c.sourceType}</div></div>
+        <div class="detail-field"><div class="detail-field-label">Entry Date</div><div class="detail-field-value">${fmtDate(c.entryDate)}</div></div>
+        <div class="detail-field"><div class="detail-field-label">Completion</div><div class="detail-field-value">${fmtDate(c.completionDate)}</div></div>
+        <div class="detail-field"><div class="detail-field-label">Paid Date</div><div class="detail-field-value">${fmtDate(c.paidDate)}</div></div>
+        ${c.testName ? `<div class="detail-field full"><div class="detail-field-label">Test</div><div class="detail-field-value">${c.testName}</div></div>` : ''}
+        ${c.notes ? `<div class="detail-field full"><div class="detail-field-label">Notes</div><div class="detail-field-value" style="font-size:13px;font-weight:400;">${c.notes}</div></div>` : ''}
+      </div>
+    </div>
+
+    <div class="commission-box">
+      <div class="commission-box-row"><span class="commission-label">Total Bill</span><span class="commission-value">${fmt(c.bill)}</span></div>
+      <div class="commission-box-row"><span class="commission-label">Lab Cost</span><span class="commission-value">${fmt(c.labCost)}</span></div>
+      <div class="commission-box-row"><span class="commission-label">Comm. Type</span><span class="commission-value" style="font-size:12px;">${commTypeLabel} (${commDetail})</span></div>
+      <div class="commission-box-row"><span class="commission-label">Commission</span><span class="commission-value">${fmt(c.commission)}</span></div>
+      <div class="commission-box-row total"><span class="commission-label">Net Profit</span><span class="commission-value" style="color:${c.profit>=0?'var(--green)':'var(--red)'};">${fmt(c.profit)}</span></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">📋 Prescriptions</div>
+      ${files(c.prescFiles, 'Prescription')}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">🧾 Receipts</div>
+      ${files(c.recFiles, 'Receipt')}
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('detailModal').classList.remove('open')">Close</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="document.getElementById('detailModal').classList.remove('open');openEditCase('${c.id}')">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCase('${c.id}')">🗑️</button>
+    </div>
+
+    <div style="margin-top:10px;">
+      <button class="wa-btn btn-full" onclick="waShareCase('${c.id}')">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.857L.057 23.88l6.206-1.49A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.034-1.389l-.36-.215-3.736.898.938-3.64-.235-.373A9.817 9.817 0 012.182 12c0-5.42 4.398-9.818 9.818-9.818 5.42 0 9.818 4.398 9.818 9.818 0 5.42-4.398 9.818-9.818 9.818z"/></svg>
+        Share via WhatsApp
+      </button>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function deleteCase(id) {
+  if(!confirm('Delete this case? This cannot be undone.')) return;
+  cases = cases.filter(c => c.id !== id);
+  save(); document.getElementById('detailModal').classList.remove('open');
+  renderDashboard(); renderCases(); updateNotif();
+  toast('Case deleted');
+}
+
+// ── REPORTS ──────────────────────────────────────────
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function changeMonth(d) { reportMonth.setMonth(reportMonth.getMonth() + d); renderReports(); }
+
+function renderReports() {
+  const mo = reportMonth.getMonth(), yr = reportMonth.getFullYear();
+  document.getElementById('monthLabel').textContent = monthNames[mo] + ' ' + yr;
+  const mc = cases.filter(c => { const d = new Date(c.entryDate); return d.getMonth()===mo && d.getFullYear()===yr; });
+  const total = mc.length;
+  const revenue = mc.reduce((s,c) => s+(c.bill||0),0);
+  const commPaid = mc.filter(c=>c.commStatus==='Paid').reduce((s,c)=>s+(c.commission||0),0);
+  const commPending = mc.filter(c=>c.commStatus!=='Paid').reduce((s,c)=>s+(c.commission||0),0);
+  const profit = mc.reduce((s,c)=>s+(c.profit||0),0);
+  const completed = mc.filter(c=>c.labStatus==='Completed').length;
+  const pending = mc.filter(c=>c.labStatus==='Pending').length;
+  const inprog = mc.filter(c=>c.labStatus==='In Progress').length;
+
+  document.getElementById('reportStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Cases</div><div class="stat-value stat-accent">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value stat-green">${fmt(revenue)}</div></div>
+    <div class="stat-card"><div class="stat-label">Comm. Paid</div><div class="stat-value stat-purple">${fmt(commPaid)}</div></div>
+    <div class="stat-card"><div class="stat-label">Comm. Due</div><div class="stat-value stat-orange">${fmt(commPending)}</div></div>
+    <div class="stat-card full"><div class="stat-label">Net Profit</div><div class="stat-value ${profit>=0?'stat-green':'stat-red'}">${fmt(profit)}</div></div>
+  `;
+
+  document.getElementById('reportChart').innerHTML = `
+    <div class="card-header"><div class="card-title">Lab Status Breakdown</div></div>
+    ${statusBar('Completed',completed,total,'var(--green)')}
+    ${statusBar('In Progress',inprog,total,'var(--accent)')}
+    ${statusBar('Pending',pending,total,'var(--yellow)')}
+    ${statusBar('Cancelled',mc.filter(c=>c.labStatus==='Cancelled').length,total,'var(--red)')}
+  `;
+
+  // Agent breakdown
+  const agents = {};
+  mc.forEach(c => {
+    if(!agents[c.agent]) agents[c.agent] = {cases:0,bill:0,comm:0,profit:0};
+    agents[c.agent].cases++;
+    agents[c.agent].bill += c.bill||0;
+    agents[c.agent].comm += c.commission||0;
+    agents[c.agent].profit += c.profit||0;
+  });
+  const sorted = Object.entries(agents).sort((a,b)=>b[1].bill-a[1].bill);
+  document.getElementById('agentBreakdown').innerHTML = sorted.length ? sorted.map(([name,d]) => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-weight:600;font-size:14px;">${name}</div>
+        <div style="font-size:12px;color:var(--text3);">${d.cases} case${d.cases>1?'s':''}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
+        <div><div style="color:var(--text3);">Bill</div><div style="font-weight:600;">${fmt(d.bill)}</div></div>
+        <div><div style="color:var(--text3);">Comm.</div><div style="font-weight:600;color:var(--purple);">${fmt(d.comm)}</div></div>
+        <div><div style="color:var(--text3);">Profit</div><div style="font-weight:600;color:${d.profit>=0?'var(--green)':'var(--red)'};">${fmt(d.profit)}</div></div>
+      </div>
+    </div>`).join('') : '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">No cases this month</div>';
+}
+
+function statusBar(label, val, total, color) {
+  const pct = total ? Math.round(val/total*100) : 0;
+  return `<div style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="font-weight:500;">${label}</span><span style="color:var(--text2);">${val} (${pct}%)</span></div>
+    <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${color};"></div></div>
+  </div>`;
+}
+
+// ── PENDING PAGE ──────────────────────────────────────
+function renderPending() {
+  const pending = cases.filter(c => c.commStatus !== 'Paid');
+  const overdue = pending.filter(c => { if(!c.entryDate) return false; const diff = (Date.now()-new Date(c.entryDate))/(1000*60*60*24); return diff > 30; });
+
+  let html = '';
+  if(overdue.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🔴 Overdue (30+ days)</div>`;
+    html += overdue.map(c => pendingCard(c, true)).join('');
+    html += `<div style="margin:14px 0;border-top:1px solid var(--border);"></div>`;
+  }
+  const regular = pending.filter(c => !overdue.find(o=>o.id===c.id));
+  if(regular.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🟡 Pending</div>`;
+    html += regular.map(c => pendingCard(c, false)).join('');
+  }
+  if(!pending.length) html = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">All commissions paid!</div><div class="empty-text">No pending payments</div></div>';
+  document.getElementById('pendingList').innerHTML = html;
+}
+
+function pendingCard(c, overdue) {
+  return `<div class="pending-item ${overdue?'overdue-item':''}" onclick="openDetailModal('${c.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="pending-agent">${c.agent}</div>
+        <div class="pending-meta">${c.id} · ${c.sourceType} · ${fmtDate(c.entryDate)}</div>
+        <div class="pending-amount">${fmt(c.commission)}</div>
+      </div>
+      <div>${commBadge(c.commStatus)}</div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markPaid('${c.id}')">✓ Mark Paid</button>
+      <button class="wa-btn" style="font-size:11px;padding:7px 10px;" onclick="event.stopPropagation();waShareCase('${c.id}')">📲 WhatsApp</button>
+    </div>
+  </div>`;
+}
+
+function markPaid(id) {
+  const c = cases.find(x=>x.id===id);
+  if(!c) return;
+  c.commStatus = 'Paid';
+  c.paidDate = today();
+  save(); renderPending(); renderDashboard(); updateNotif();
+  toast('Commission marked as paid ✓','success');
+}
+
+// ── EXPORT / IMPORT / BACKUP ──────────────────────────
+function exportData() {
+  const payload = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    exportedBy: 'DiagTrack Pro',
+    totalCases: cases.length,
+    cases: cases
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `DiagTrack_Backup_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('diagtrack_last_backup', new Date().toISOString());
+  renderBackupInfo();
+  toast('Backup downloaded successfully ✓', 'success');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.name.endsWith('.json')) { toast('Please select a .json backup file', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.cases || !Array.isArray(data.cases)) { toast('Invalid backup file format', 'error'); return; }
+      const confirm1 = confirm(`Restore ${data.cases.length} cases from backup dated ${data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('en-IN') : 'unknown'}?\n\nThis will REPLACE all current data (${cases.length} cases).`);
+      if (!confirm1) return;
+      cases = data.cases;
+      save();
+      renderDashboard(); renderCases(); updateNotif(); renderBackupInfo();
+      toast(`Restored ${cases.length} cases successfully ✓`, 'success');
+      input.value = '';
+    } catch(err) {
+      toast('Failed to read backup file', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportToWhatsApp() {
+  const totalBill = cases.reduce((s,c) => s+(c.bill||0), 0);
+  const totalComm = cases.reduce((s,c) => s+(c.commission||0), 0);
+  const pending = cases.filter(c=>c.commStatus!=='Paid').length;
+  const text = `*DiagTrack Pro — Data Summary*\n\nTotal Cases: ${cases.length}\nTotal Revenue: ${fmt(totalBill)}\nTotal Commission: ${fmt(totalComm)}\nPending Commissions: ${pending} cases\n\nBacked up on: ${new Date().toLocaleString('en-IN')}\n\n_DiagTrack Pro Backup Summary_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+function clearAllData() {
+  if (!confirm('Are you sure? This will delete ALL cases permanently.\n\nThis CANNOT be undone. Make sure you have a backup!')) return;
+  if (!confirm('Last warning: Delete all ' + cases.length + ' cases?')) return;
+  cases = [];
+  save();
+  renderDashboard(); renderCases(); updateNotif(); renderBackupInfo();
+  toast('All data cleared', 'error');
+}
+
+function renderBackupInfo() {
+  const el = document.getElementById('backupInfo');
+  if (!el) return;
+  const lastBackup = localStorage.getItem('diagtrack_last_backup');
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">Total Cases</div><div style="font-size:18px;font-weight:700;color:var(--accent);">${cases.length}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">Data Size</div><div style="font-size:18px;font-weight:700;color:var(--text);">${(JSON.stringify(cases).length/1024).toFixed(1)} KB</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--text3);">Last backup: ${lastBackup ? new Date(lastBackup).toLocaleString('en-IN') : 'Never — backup now!'}</div>
+  `;
+}
+
+// ── WHATSAPP ──────────────────────────────────────────
+function waShareCase(id) {
+  const c = cases.find(x=>x.id===id);
+  if(!c) return;
+  const text = `*DiagTrack — Case Update*\n\nCase ID: ${c.id}\nAgent/Patient: ${c.agent}\nBill: ${fmt(c.bill)}\nCommission: ${fmt(c.commission)}\nStatus: ${c.commStatus}\nLab: ${c.labStatus}\n\nDate: ${fmtDate(c.entryDate)}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+function waShare(id, fname, label) {
+  const text = `*DiagTrack — ${label}*\nCase: ${id}\nFile: ${fname}\n\nPlease find the ${label.toLowerCase()} attached.`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+function updateNotif() {
+  const n = cases.filter(c=>c.commStatus!=='Paid').length;
+  document.getElementById('notifBtn').dataset.count = n;
+}
+
+// ── TOAST ─────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── CLOSE MODALS ON BACKDROP CLICK ───────────────────
+document.getElementById('caseModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeCaseModal(); });
+document.getElementById('detailModal').addEventListener('click', e => { if(e.target===e.currentTarget) document.getElementById('detailModal').classList.remove('open'); });
+
+// ── SEED DEMO DATA (first time only) ─────────────────
+if(!cases.length) {
+  cases = [
+    {id:'DC-2026-001',agent:'ABC Pharmacy',sourceType:'Agent',entryDate:'2026-04-01',completionDate:'2026-04-03',paidDate:'2026-04-05',bill:5000,labCost:3200,commType:'blood_local',commPercent:10,commFixed:0,testName:'',commission:500,profit:1300,labStatus:'Completed',commStatus:'Paid',notes:'CBC + LFT panel',prescFiles:[],recFiles:[],createdAt:'2026-04-01T10:00:00Z',updatedAt:'2026-04-05T10:00:00Z'},
+    {id:'DC-2026-002',agent:'XYZ Patient',sourceType:'Direct',entryDate:'2026-04-05',completionDate:'',paidDate:'',bill:2800,labCost:1800,commType:'fixed',commPercent:0,commFixed:200,testName:'Vitamin D Test',commission:200,profit:800,labStatus:'In Progress',commStatus:'Pending',notes:'Vitamin D deficiency check',prescFiles:[],recFiles:[],createdAt:'2026-04-05T10:00:00Z',updatedAt:'2026-04-05T10:00:00Z'},
+    {id:'DC-2026-003',agent:'MedPlus Store',sourceType:'Agent',entryDate:'2026-04-10',completionDate:'2026-04-12',paidDate:'',bill:7500,labCost:4500,commType:'blood_outside',commPercent:15,commFixed:0,testName:'',commission:1125,profit:1875,labStatus:'Completed',commStatus:'In Progress',notes:'Full body checkup sent to outside lab',prescFiles:[],recFiles:[],createdAt:'2026-04-10T10:00:00Z',updatedAt:'2026-04-12T10:00:00Z'},
+    {id:'DC-2026-004',agent:'ABC Pharmacy',sourceType:'Agent',entryDate:'2026-04-15',completionDate:'',paidDate:'',bill:3200,labCost:2000,commType:'fixed',commPercent:0,commFixed:300,testName:'Thyroid Profile',commission:300,profit:900,labStatus:'Pending',commStatus:'Pending',notes:'T3 T4 TSH',prescFiles:[],recFiles:[],createdAt:'2026-04-15T10:00:00Z',updatedAt:'2026-04-15T10:00:00Z'}
+  ];
+  save();
+}
+updateNotif();
+</script>
+</body>
+</html>
